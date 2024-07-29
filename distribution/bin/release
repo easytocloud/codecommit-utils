@@ -13,7 +13,7 @@ get_current_release() {
 
 # Check if notes are provided
 if [ -z "$1" ]; then
-  echo "Usage: release.sh [-m | -M ] <notes>"
+  echo "Usage: release.sh [-m | -M | -F ] <notes>"
   exit 1
 fi
 
