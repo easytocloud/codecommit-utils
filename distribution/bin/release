@@ -8,7 +8,7 @@
 
 # Function to get the current release version
 get_current_release() {
-  gh release list | head -1 | awk '{print $1}'
+  git tag  | tail -1 | awk '{print $1}'
 }
 
 # Check if notes are provided
@@ -50,8 +50,8 @@ esac
 echo "New release = ${NEW}"
 
 # Create the new release
-git tag "${NEW}"
-git push origin tag "${NEW}"
+git tag "${NEW} - ${@}"
+git push origin tag "${NEW} - ${@}"
 ## does tag build new release?
 # Skipping realease creation for now
 echo gh release create "${NEW}" --title "${NEW}" --notes "${@}"
