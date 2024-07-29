@@ -55,5 +55,6 @@ git push
 git push origin tag "${NEW}"
 ## does tag build new release?
 # Skipping realease creation for now
-echo gh release create "${NEW}" --title "${NEW}" --notes "${@}"
+# echo gh release create "${NEW}" --title "${NEW}" --notes "${@}"
+echo 'No github action'
 
