@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# usage: release.sh <notes>
+# notes are mandatory
+# optionally -m to increase the minor version and reset fix versions to 0
+# optionally -M to increase the major version and reset minor and fix versions to 0
+
+# Function to get the current release version
+get_current_release() {
+  gh release list | head -1 | awk '{print $1}'
+}
+
+# Check if notes are provided
+if [ -z "$1" ]; then
+  echo "Usage: release.sh [-m | -M ] <notes>"
+  exit 1
+fi
+
+# check that all changes are committed
+if [ -n "$(git status --porcelain)" ]; then
+  echo "There are uncommitted changes"
+  exit 1
+fi
+# Determine the version increment type
+CURRENT=$(get_current_release)
+echo "Current release = ${CURRENT}"
+
+case $1 in
+  -m)
+    echo "Increasing minor version"
+    NEW=$(echo "${CURRENT:-v0.0.0}" | awk -F. '{print $1"."$2+1".0"}')
+    shift
+    ;;
+  -M)
+    echo "Increasing major version"
+    NEW=$(echo "${CURRENT:-v0.0.0}" | awk -F. '{print $1+1".0.0"}')
+    shift
+    ;;
+  *)
+    echo "Increasing fix version"
+    NEW=$(echo "${CURRENT:-v0.0.0}" | awk -F. '{print $1"."$2"."$3+1}')
+    ;;
+esac
+
+echo "New release = ${NEW}"
+
+# Create the new release
+git tag "${NEW}"
+git push origin tag "${NEW}"
+echo gh release create "${NEW}" --title "${NEW}" --notes "${@}"
+
