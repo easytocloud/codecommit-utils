@@ -58,11 +58,9 @@ jobs:
           # Custom install command for your formula.
           # Required - string.
           install: |
-            bin.install "distribution/bin/akskrotate"
             bin.install "distribution/bin/ccclone"
             bin.install "distribution/bin/cclist"
             bin.install "distribution/bin/ccinit"
-            bin.install "distribution/bin/privpage"
 
           # Custom test command for your formula so you can run `brew test`.
           # Optional - string.
