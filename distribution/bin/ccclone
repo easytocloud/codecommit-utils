@@ -1,6 +1,11 @@
 #! /usr/bin/env bash
 
 # ccclone is git clone for codecommit
+if [ -z "$1" ]
+then
+    echo "ccclone: No repository name supplied - use cclist to get a list of repositories"
+    exit 1
+fi
 
 REPO=${1}
 
