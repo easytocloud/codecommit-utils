@@ -2,6 +2,7 @@
 
 # usage: release.sh <notes>
 # notes are mandatory
+#
 # optionally -m to increase the minor version and reset fix versions to 0
 # optionally -M to increase the major version and reset minor and fix versions to 0
 
@@ -47,5 +48,7 @@ echo "New release = ${NEW}"
 # Create the new release
 git tag "${NEW}"
 git push origin tag "${NEW}"
+## does tag build new release?
+# Skipping realease creation for now
 echo gh release create "${NEW}" --title "${NEW}" --notes "${@}"
 
