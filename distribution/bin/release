@@ -55,5 +55,5 @@ git push
 # git push origin tag "${NEW}"
 ## does tag build new release?
 # Skipping realease creation for now
-gh release create "${NEW}" --title "${NEW}" --target --notes "${@}"
+gh release create "${NEW}" --target --generate-notes
 
