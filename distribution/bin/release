@@ -50,8 +50,8 @@ esac
 echo "New release = ${NEW}"
 
 # Create the new release
-git tag "${NEW} - ${@}"
-git push origin tag "${NEW} - ${@}"
+git tag "${NEW}"
+git push origin tag "${NEW}"
 ## does tag build new release?
 # Skipping realease creation for now
 echo gh release create "${NEW}" --title "${NEW}" --notes "${@}"
