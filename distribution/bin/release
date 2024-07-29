@@ -37,6 +37,10 @@ case $1 in
     NEW=$(echo "${CURRENT:-v0.0.0}" | awk -F. '{print $1+1".0.0"}')
     shift
     ;;
+  -F) # Force tag
+    NEW=$2
+    shift 2
+    ;;
   *)
     echo "Increasing fix version"
     NEW=$(echo "${CURRENT:-v0.0.0}" | awk -F. '{print $1"."$2"."$3+1}')
