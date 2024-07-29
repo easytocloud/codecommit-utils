@@ -1,3 +1,11 @@
+## [0.4.1](https://github.com/easytocloud/aws-utils/compare/v0.4.0...v0.4.1) (2024-07-29)
+
+
+### Bug Fixes
+
+* added parameter check for ccclone ([d5c8bb5](https://github.com/easytocloud/aws-utils/commit/d5c8bb5264cfbba883e80457aeb410353bfaeb1b))
+* removed release tool from workflow ([ec479b8](https://github.com/easytocloud/aws-utils/commit/ec479b8c28e202ec419ffe8bf6eed39fe92b7355))
+
 # [0.4.0](https://github.com/easytocloud/aws-utils/compare/v0.3.1...v0.4.0) (2024-07-29)
 
 
