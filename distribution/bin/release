@@ -51,6 +51,7 @@ echo "New release = ${NEW}"
 
 # Create the new release
 git tag "${NEW}"
+git push
 git push origin tag "${NEW}"
 ## does tag build new release?
 # Skipping realease creation for now
