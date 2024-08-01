@@ -1,3 +1,10 @@
+## [0.4.2](https://github.com/easytocloud/aws-utils/compare/v0.4.1...v0.4.2) (2024-08-01)
+
+
+### Bug Fixes
+
+* only publish on push to main ([d1fd0f2](https://github.com/easytocloud/aws-utils/commit/d1fd0f22c3761f16d86da844fef8b1135113b80b))
+
 ## [0.4.1](https://github.com/easytocloud/aws-utils/compare/v0.4.0...v0.4.1) (2024-07-29)
 
 
