@@ -11,6 +11,10 @@ This document lists the CodeCommit repositories available in the current AWS acc
     # Get list of repositories
     repos=$(aws codecommit list-repositories --query 'repositories[*].repositoryName' --output text)
 
+    if [ -z "$repos" ]; then
+        rm REPOS.md
+        exit 0
+    fi
     # Loop through repositories and add details to repos.md
     for repo in $repos; do
         # Get repository description
