@@ -1,3 +1,35 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
-aws codecommit list-repositories --query 'repositories[].repositoryName' --output text | xargs -n1 
+if [ "$1" = "--create-repos-md" ]; then
+    # Create repos.md file with boilerplate text
+    echo "# AWS CodeCommit Repositories
+
+This document lists the CodeCommit repositories available in the current AWS account and region.
+
+" > REPOS.md
+
+    # Get list of repositories
+    repos=$(aws codecommit list-repositories --query 'repositories[*].repositoryName' --output text)
+
+    # Loop through repositories and add details to repos.md
+    for repo in $repos; do
+        # Get repository description
+        description=$(aws codecommit get-repository --repository-name "$repo" --query 'repositoryMetadata.description' --output text)
+        
+        # If description is None, set it to "No description available"
+        if [ "$description" = "None" ]; then
+            description="No description available"
+        fi
+
+        # Append repository details to repos.md
+        echo "## $repo" >> REPOS.md
+        echo "" >> REPOS.md
+        echo "Description: $description" >> REPOS.md
+        echo "" >> REPOS.md
+    done
+
+    # No output to stdout
+else
+    # Original functionality: list repositories to stdout
+    aws codecommit list-repositories --query 'repositories[].repositoryName' --output text | xargs -n1
+fi
