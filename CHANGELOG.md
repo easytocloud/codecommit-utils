@@ -1,3 +1,10 @@
+# [0.5.0](https://github.com/easytocloud/aws-utils/compare/v0.4.2...v0.5.0) (2024-08-17)
+
+
+### Features
+
+* added --create-repos-md option ([446fc3b](https://github.com/easytocloud/aws-utils/commit/446fc3b8764732c76156134f417236708ed978e0))
+
 ## [0.4.2](https://github.com/easytocloud/aws-utils/compare/v0.4.1...v0.4.2) (2024-08-01)
 
 
