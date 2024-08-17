@@ -1,3 +1,10 @@
+## [0.5.1](https://github.com/easytocloud/aws-utils/compare/v0.5.0...v0.5.1) (2024-08-17)
+
+
+### Bug Fixes
+
+* do not create REPOS.md when no repositories exist in the account/region ([ea026cd](https://github.com/easytocloud/aws-utils/commit/ea026cda238f9f0f8990e5c815b4d28966611493))
+
 # [0.5.0](https://github.com/easytocloud/aws-utils/compare/v0.4.2...v0.5.0) (2024-08-17)
 
 
