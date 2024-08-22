@@ -68,7 +68,7 @@ jobs:
             bin.install "distribution/bin/cclist"
             bin.install "distribution/bin/ccinit"
             bash_completion.install "distribution/completions/ccclone-completion.bash"
-            zsh_completion.install "distribution/completions/ccclone-completion.zsh"
+            zsh_completion.install "distribution/completions/_ccclone"
 
           # Custom test command for your formula so you can run `brew test`.
           # Optional - string.
