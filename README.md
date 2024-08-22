@@ -1,47 +1,73 @@
-![release workflow](https://github.com/easytocloud/aws-utils/actions/workflows/release.yml/badge.svg)
-# aws-utils
-AWS utilities
+# codecommit-utils
 
-Collection of easytocloud AWS utilities.
+![release workflow](https://github.com/easytocloud/codecommit-utils/actions/workflows/release.yml/badge.svg)
 
-## CodeCommit
+A collection of command-line utilities to simplify working with AWS CodeCommit repositories.
 
-The cc* tools interact with AWS CodeCommit
+## Introduction
 
-- cclist: list CodeCommit repositories
-- ccclone: git clone of named CodeCommit repository
-- ccinit: initalize CodeCommit repository, populate with README.md and push as Initial commit.
+`codecommit-utils` is a set of tools designed to streamline your interaction with AWS CodeCommit from the command line. Instead of using lengthy `aws codecommit` commands, you can use these simplified utilities to manage your CodeCommit repositories more efficiently.
+
+## Features
+
+This package provides the following utilities:
+
+- `cclist`: List all AWS CodeCommit repositories in your account.
+- `ccclone`: Clone a specific AWS CodeCommit repository.
+- `ccinit`: Initialize a new AWS CodeCommit repository with a dummy README.md file.
 
 ## Installation
 
-### Zsh Completion
+You can easily install `codecommit-utils` using Homebrew:
 
-To enable zsh completion for the `ccclone` command:
+```bash
+brew install easytocloud/tap/codecommit-utils
+```
 
-1. Add the following line to your `~/.zshrc` file:
+## Usage
 
-   ```zsh
-   fpath=(/path/to/distribution/completions $fpath)
-   ```
+### cclist
 
-   Replace `/path/to/` with the actual path to the aws-utils project directory.
+List all AWS CodeCommit repositories in your account:
 
-2. Reload your zsh configuration:
+```bash
+cclist
+```
 
-   ```zsh
-   source ~/.zshrc
-   ```
+### ccclone
 
-3. Rebuild zsh's completion cache:
+Clone a specific AWS CodeCommit repository:
 
-   ```zsh
-   rm -f ~/.zcompdump; compinit
-   ```
+```bash
+ccclone repository-name
+```
 
-## Other utilities
+### ccinit
 
-Some other utilities that used to be in this repository are in their own repo now:
+Initialize a new AWS CodeCommit repository with a dummy README.md:
 
-- akskrotate: to rotate your AK/SK
-- whoiam: AWS IAM version of whoami, part of privpage
-- privpage: privacy pager masking AWS account IDs and other sensitive info
+```bash
+ccinit repository-name
+```
+
+## Zsh Integration
+
+When using Zsh, these tools come with completion functions for an enhanced command-line experience. This is particularly useful with `ccclone`, which can provide a list of all repositories for the current AWS profile.
+
+To enable Zsh completions, make sure your Zsh configuration loads the completion functions provided by this package.
+
+## Contributing
+
+Contributions to `codecommit-utils` are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+If you encounter any problems or have any questions, please open an issue on the [GitHub repository](https://github.com/easytocloud/codecommit-utils/issues).
+
+---
+
+Developed with ❤️ by [easytocloud](https://github.com/easytocloud)
