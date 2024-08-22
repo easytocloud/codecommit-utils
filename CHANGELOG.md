@@ -1,3 +1,10 @@
+## [0.6.4](https://github.com/easytocloud/aws-utils/compare/v0.6.3...v0.6.4) (2024-08-22)
+
+
+### Bug Fixes
+
+* fixed bug in retrieving repo description ([49b7772](https://github.com/easytocloud/aws-utils/commit/49b77727e332a2f95a73187b7fecf6c13bb7577d))
+
 ## [0.6.3](https://github.com/easytocloud/aws-utils/compare/v0.6.2...v0.6.3) (2024-08-22)
 
 
