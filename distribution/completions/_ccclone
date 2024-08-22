@@ -1,14 +1,14 @@
 #compdef ccclone
 
 _ccclone() {
-    echo "Debug: _ccclone function called" >&2
+    #echo "Debug: _ccclone function called" >&2
     local -a repos
     repos=(${(f)"$(cclist 2>/dev/null)"})
-    echo "Debug: repos = ${repos[@]}" >&2
+    #echo "Debug: repos = ${repos[@]}" >&2
     if [[ -n "$repos" ]]; then
         _describe 'repositories' repos
     else
-        echo "Debug: No repositories found or cclist failed" >&2
+        #echo "Debug: No repositories found or cclist failed" >&2
         _message 'No repositories found or unable to fetch repositories'
     fi
 }

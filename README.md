@@ -1,3 +1,4 @@
+![release workflow](https://github.com/easytocloud/aws-utils/actions/workflows/release.yml/badge.svg)
 # aws-utils
 AWS utilities
 
