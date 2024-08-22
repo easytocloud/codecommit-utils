@@ -1,0 +1,14 @@
+#compdef cclist
+
+# Zsh completer function for cclist
+_cclist() {
+    local -a opts
+    opts=(
+        '--create-repos-md:Create a REPOS.md file with repository details'
+        '--help:Display help message'
+    )
+
+    _describe 'command' opts
+}
+
+_cclist "$@"
