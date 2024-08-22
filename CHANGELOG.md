@@ -1,3 +1,10 @@
+## [0.6.6](https://github.com/easytocloud/codecommit-utils/compare/v0.6.5...v0.6.6) (2024-08-22)
+
+
+### Bug Fixes
+
+* added completion functions to release.yml ([f8dbd05](https://github.com/easytocloud/codecommit-utils/commit/f8dbd052d2af28b271f777239befb8ef2fbe9842))
+
 ## [0.6.5](https://github.com/easytocloud/codecommit-utils/compare/v0.6.4...v0.6.5) (2024-08-22)
 
 
