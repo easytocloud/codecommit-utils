@@ -1,3 +1,10 @@
+## [0.6.5](https://github.com/easytocloud/codecommit-utils/compare/v0.6.4...v0.6.5) (2024-08-22)
+
+
+### Bug Fixes
+
+* changed repo-name in CHANGELOG ([3162867](https://github.com/easytocloud/codecommit-utils/commit/31628673d4ab13c1222a25805a7b07dfdbe28448))
+
 ## [0.6.4](https://github.com/easytocloud/codecommit-utils/compare/v0.6.3...v0.6.4) (2024-08-22)
 
 
