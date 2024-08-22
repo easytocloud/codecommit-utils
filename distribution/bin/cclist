@@ -18,7 +18,7 @@ This document lists the CodeCommit repositories available in the current AWS acc
     # Loop through repositories and add details to repos.md
     for repo in $repos; do
         # Get repository description
-        description=$(aws codecommit get-repository --repository-name "$repo" --query 'repositoryMetadata.description' --output text)
+        description=$(aws codecommit get-repository --repository-name "$repo" --query 'repositoryMetadata.repositoryDescription' --output text)
         
         # If description is None, set it to "No description available"
         if [ "$description" = "None" ]; then
