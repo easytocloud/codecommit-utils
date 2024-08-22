@@ -1,3 +1,10 @@
+## [0.6.3](https://github.com/easytocloud/aws-utils/compare/v0.6.2...v0.6.3) (2024-08-22)
+
+
+### Bug Fixes
+
+* removed debug output from completion function ([fab40f7](https://github.com/easytocloud/aws-utils/commit/fab40f7e3ff733d1d6692136057dd870a2b8549b))
+
 ## [0.6.2](https://github.com/easytocloud/aws-utils/compare/v0.6.1...v0.6.2) (2024-08-22)
 
 
