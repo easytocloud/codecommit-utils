@@ -1,3 +1,10 @@
+## [0.6.1](https://github.com/easytocloud/aws-utils/compare/v0.6.0...v0.6.1) (2024-08-22)
+
+
+### Bug Fixes
+
+* added completion for ccclone ([677aa90](https://github.com/easytocloud/aws-utils/commit/677aa90b5f8234d726e66fe5bf3dd5c1fb675ffd))
+
 # [0.6.0](https://github.com/easytocloud/aws-utils/compare/v0.5.1...v0.6.0) (2024-08-22)
 
 
