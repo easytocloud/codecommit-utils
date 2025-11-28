@@ -44,7 +44,6 @@ jobs:
           GH_TOKEN: ${{ steps.load-github-credentials.outputs.HOMEBREW_TAP_GITHUB_TOKEN }}
 
       - name: Release codecommit-utils to easytocloud/homebrew-tap
-        # TODO: Pin to SHA once Dependabot provides the hash for v1
         uses: Justintime50/homebrew-releaser@e57613205c9f1d48f7e9af0a9b0b7f7acf8b4433  # v1.2.7
         with:
           # The name of the homebrew tap to publish your formula to as it appears on GitHub.
