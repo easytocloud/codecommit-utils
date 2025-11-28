@@ -21,7 +21,7 @@ jobs:
     steps:
       # Pin to SHA commit hash instead of mutable tag for supply chain security
       # Dependabot will automatically update this when new versions are released
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
 
       - name: Configure 1Password Service Account
         uses: 1password/load-secrets-action/configure@e6b4e4d0f66132bd83f6e0d75c075359932e0479  # v2.0.1
