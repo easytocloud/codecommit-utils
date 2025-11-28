@@ -31,7 +31,7 @@ Dependabot automatically monitors and updates our pinned GitHub Actions:
 
 See `.github/dependabot.yml` for configuration.
 
-###3. Minimal Permissions
+### 3. Minimal Permissions
 
 Workflows use the principle of least privilege:
 ```yaml
