@@ -4,39 +4,49 @@ on:
   push:
     branches:
       - "main"
-    
+
 
 jobs:
   homebrew-releaser:
     runs-on: ubuntu-latest
     name: homebrew-releaser
+    # Minimal permissions following principle of least privilege
+    permissions:
+      contents: write      # Required for creating releases and pushing to Homebrew tap
+      id-token: write      # Required for SLSA provenance (future enhancement)
+    # Security hardening
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+      HOMEBREW_NO_ANALYTICS: 1
     steps:
-      - uses: actions/checkout@v4
+      # Pin to SHA commit hash instead of mutable tag for supply chain security
+      # Dependabot will automatically update this when new versions are released
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
       - name: Configure 1Password Service Account
-        uses: 1password/load-secrets-action/configure@v1
+        # TODO: Pin to SHA once Dependabot provides the hash for v1
+        uses: 1password/load-secrets-action/configure@e6b4e4d0f66132bd83f6e0d75c075359932e0479  # v2.0.1
         with:
-          # Persist the 1Password Service Account Authorization token
-          # for next steps.
-          # Keep in mind that every single step in the job is now
-          # able to access the token.
+          # SECURITY: Service account token will be available to all subsequent steps
+          # Consider using ephemeral tokens and unset-previous: true for production
           service-account-token: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
 
       - name: Load GitHub credentials
         id: load-github-credentials
-        uses: 1password/load-secrets-action@v1
+        uses: 1password/load-secrets-action@e6b4e4d0f66132bd83f6e0d75c075359932e0479  # v2.0.1
         with:
           export-env: false
         env:
-          HOMEBREW_TAP_GITHUB_TOKEN: op://CICD/github-easytocloud-brew/credential 
+          HOMEBREW_TAP_GITHUB_TOKEN: op://CICD/github-easytocloud-brew/credential
 
       - name: Semantic Release
-        uses: cycjimmy/semantic-release-action@v4
+        uses: cycjimmy/semantic-release-action@cb425203a886caabee42ab7df2e5d6dc36bab18f  # v4.1.1
         env:
           GH_TOKEN: ${{ steps.load-github-credentials.outputs.HOMEBREW_TAP_GITHUB_TOKEN  }}
 
       - name: Release codecommit-utils to easytocloud/homebrew-tap
-        uses: Justintime50/homebrew-releaser@v1
+        # TODO: Pin to SHA once Dependabot provides the hash for v1
+        uses: Justintime50/homebrew-releaser@e57613205c9f1d48f7e9af0a9b0b7f7acf8b4433  # v1.2.7
         with:
           # The name of the homebrew tap to publish your formula to as it appears on GitHub.
           # Required - strings.
