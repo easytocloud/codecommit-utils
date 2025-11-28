@@ -24,7 +24,6 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
       - name: Configure 1Password Service Account
-        # TODO: Pin to SHA once Dependabot provides the hash for v1
         uses: 1password/load-secrets-action/configure@e6b4e4d0f66132bd83f6e0d75c075359932e0479  # v2.0.1
         with:
           # SECURITY: Service account token will be available to all subsequent steps
