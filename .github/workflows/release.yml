@@ -42,7 +42,7 @@ jobs:
       - name: Semantic Release
         uses: cycjimmy/semantic-release-action@cb425203a886caabee42ab7df2e5d6dc36bab18f  # v4.1.1
         env:
-          GH_TOKEN: ${{ steps.load-github-credentials.outputs.HOMEBREW_TAP_GITHUB_TOKEN  }}
+          GH_TOKEN: ${{ steps.load-github-credentials.outputs.HOMEBREW_TAP_GITHUB_TOKEN }}
 
       - name: Release codecommit-utils to easytocloud/homebrew-tap
         # TODO: Pin to SHA once Dependabot provides the hash for v1
