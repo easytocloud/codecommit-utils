@@ -16,7 +16,6 @@ updates:
       github-actions:
         patterns:
           - "*"
-    # Auto-merge minor and patch updates
     open-pull-requests-limit: 10
     reviewers:
       - "easytocloud"
