@@ -40,7 +40,7 @@ jobs:
           GH_TOKEN: ${{ steps.load-github-credentials.outputs.HOMEBREW_TAP_GITHUB_TOKEN }}
 
       - name: Release codecommit-utils to easytocloud/homebrew-tap
-        uses: Justintime50/homebrew-releaser@8723315045b3b879065d4ce3e8ff143e6b958529  # v1.0.0
+        uses: Justintime50/homebrew-releaser@5d20ee774009028d7ee8b3fd11e56f591ee4febf  # v2.2.0
         with:
           # The name of the homebrew tap to publish your formula to as it appears on GitHub.
           # Required - strings.
