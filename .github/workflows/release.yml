@@ -1,5 +1,8 @@
 # .github/workflows/release.yml
-# Start Homebrew Releaser when a new tag is created
+# On every push to main, let semantic-release decide whether the commits since
+# the last tag warrant a release. If they do, it tags and publishes one, and
+# Homebrew Releaser then pushes the regenerated formula to the tap. If they do
+# not, the run stops after semantic-release and nothing is published.
 on:
   push:
     branches:
@@ -36,6 +39,7 @@ jobs:
           HOMEBREW_TAP_GITHUB_TOKEN: op://CICD/github-easytocloud-brew/credential
 
       - name: Semantic Release
+        id: semantic
         # Dependabot cannot update this pin: it clones the action to check it and
         # its updater then errors out, so the weekly run reports unknown_error
         # for this action and never opens a PR. Bump it by hand.
@@ -46,6 +50,12 @@ jobs:
           GH_TOKEN: ${{ steps.load-github-credentials.outputs.HOMEBREW_TAP_GITHUB_TOKEN }}
 
       - name: Release codecommit-utils to easytocloud/homebrew-tap
+        # Only run when semantic-release actually published a version. Otherwise
+        # this regenerates the formula the tap already has, and its 'git commit'
+        # fails with 'nothing to commit, working tree clean', failing the whole
+        # run. That is why every push that cuts no release - a merge commit, a
+        # chore or a docs change - has failed here.
+        if: steps.semantic.outputs.new_release_published == 'true'
         # Dependabot cannot update this pin either, for the same reason as the
         # Semantic Release step above. v3.3.0 is available; this is a Docker
         # action, so it is unaffected by the node20 deprecation, but the pin is
