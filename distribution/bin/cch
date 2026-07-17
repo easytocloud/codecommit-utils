@@ -324,6 +324,14 @@ pr_list() {
 pr_view() {
     local id=$1
 
+    case "$id" in
+        --help) show_pr_help; return 0 ;;
+        -*)
+            echo "Error: Unknown option '$id'" >&2
+            exit 1
+            ;;
+    esac
+
     if [ -z "$id" ]; then
         echo "cch: No pull request ID supplied" >&2
         exit 1
@@ -337,6 +345,14 @@ pr_view() {
 
 pr_checkout() {
     local id=$1 branch
+
+    case "$id" in
+        --help) show_pr_help; return 0 ;;
+        -*)
+            echo "Error: Unknown option '$id'" >&2
+            exit 1
+            ;;
+    esac
 
     if [ -z "$id" ]; then
         echo "cch: No pull request ID supplied" >&2
