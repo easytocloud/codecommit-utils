@@ -1,3 +1,19 @@
+# [0.7.0](https://github.com/easytocloud/codecommit-utils/compare/v0.6.6...v0.7.0) (2026-07-17)
+
+
+### Bug Fixes
+
+* correct 1Password action usage for v2 (remove /configure path) ([d76ee97](https://github.com/easytocloud/codecommit-utils/commit/d76ee9723a7374180d473d0b426c78c0905063a7))
+* correct two action pins that do not exist ([099435e](https://github.com/easytocloud/codecommit-utils/commit/099435e53aee88ba1aac34d06eab32fdffa10c54))
+* stop the weekly Dependabot run from failing ([d5b28ed](https://github.com/easytocloud/codecommit-utils/commit/d5b28ed3d7069eff89df90914c327f4755968ba7))
+* use correct SHA for 1Password action v3.0.0 ([36dc4f4](https://github.com/easytocloud/codecommit-utils/commit/36dc4f47c9e6a0ff250c1942d88ab0298b80ce55))
+
+
+### Features
+
+* add cch pr commands for pull requests ([01f2aed](https://github.com/easytocloud/codecommit-utils/commit/01f2aed01822bb1ad0c9f8c5191f2492654a93eb))
+* add cch, a gh-style CLI for CodeCommit ([fe2e4b2](https://github.com/easytocloud/codecommit-utils/commit/fe2e4b2644465f1d17904a2ff9dfe418566ecb93))
+
 ## [0.6.6](https://github.com/easytocloud/codecommit-utils/compare/v0.6.5...v0.6.6) (2024-08-22)
 
 
