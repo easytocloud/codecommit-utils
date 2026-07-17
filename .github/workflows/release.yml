@@ -19,8 +19,9 @@ jobs:
       HOMEBREW_NO_AUTO_UPDATE: 1
       HOMEBREW_NO_ANALYTICS: 1
     steps:
-      # Pin to SHA commit hash instead of mutable tag for supply chain security
-      # Dependabot will automatically update this when new versions are released
+      # Pin to SHA commit hash instead of mutable tag for supply chain security.
+      # Dependabot updates the pins it can resolve; see the Semantic Release and
+      # homebrew-releaser steps below for the two it cannot.
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
 
       - name: Load GitHub credentials from 1Password
@@ -35,11 +36,20 @@ jobs:
           HOMEBREW_TAP_GITHUB_TOKEN: op://CICD/github-easytocloud-brew/credential
 
       - name: Semantic Release
-        uses: cycjimmy/semantic-release-action@b1b432f13acb7768e0c8efdec416d363a57546f2  # v4.1.1
+        # Dependabot cannot update this pin: it clones the action to check it and
+        # its updater then errors out, so the weekly run reports unknown_error
+        # for this action and never opens a PR. Bump it by hand.
+        # v5 is the node24 release; v6 additionally moves to semantic-release 25,
+        # which is a change to the release engine rather than a CI runtime fix.
+        uses: cycjimmy/semantic-release-action@ba330626c4750c19d8299de843f05c7aa5574f62  # v5.0.2
         env:
           GH_TOKEN: ${{ steps.load-github-credentials.outputs.HOMEBREW_TAP_GITHUB_TOKEN }}
 
       - name: Release codecommit-utils to easytocloud/homebrew-tap
+        # Dependabot cannot update this pin either, for the same reason as the
+        # Semantic Release step above. v3.3.0 is available; this is a Docker
+        # action, so it is unaffected by the node20 deprecation, but the pin is
+        # several majors behind and has to be moved by hand.
         uses: Justintime50/homebrew-releaser@8723315045b3b879065d4ce3e8ff143e6b958529  # v1.0.0
         with:
           # The name of the homebrew tap to publish your formula to as it appears on GitHub.
