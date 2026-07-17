@@ -23,8 +23,11 @@ jobs:
       HOMEBREW_NO_ANALYTICS: 1
     steps:
       # Pin to SHA commit hash instead of mutable tag for supply chain security.
-      # Dependabot updates the pins it can resolve; see the Semantic Release and
-      # homebrew-releaser steps below for the two it cannot.
+      # Dependabot updates these, but its runs against this repository are flaky:
+      # it clones semantic-release-action and homebrew-releaser to check them and
+      # its updater sometimes dies doing so, reporting unknown_error and leaving
+      # those two out of the PR it opens. If a pin looks stale, check whether the
+      # weekly run errored before assuming there is nothing newer.
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
 
       - name: Load GitHub credentials from 1Password
@@ -40,11 +43,10 @@ jobs:
 
       - name: Semantic Release
         id: semantic
-        # Dependabot cannot update this pin: it clones the action to check it and
-        # its updater then errors out, so the weekly run reports unknown_error
-        # for this action and never opens a PR. Bump it by hand.
-        # v5 is the node24 release; v6 additionally moves to semantic-release 25,
-        # which is a change to the release engine rather than a CI runtime fix.
+        # Held at v5 deliberately. v5 is the node24 release; v6 moves to
+        # semantic-release 25, which is a major bump of the tool that tags our
+        # releases and publishes the tap. Worth doing, but on its own, where a
+        # bad release is easy to attribute - not bundled into a dependency PR.
         uses: cycjimmy/semantic-release-action@ba330626c4750c19d8299de843f05c7aa5574f62  # v5.0.2
         env:
           GH_TOKEN: ${{ steps.load-github-credentials.outputs.HOMEBREW_TAP_GITHUB_TOKEN }}
@@ -56,10 +58,17 @@ jobs:
         # run. That is why every push that cuts no release - a merge commit, a
         # chore or a docs change - has failed here.
         if: steps.semantic.outputs.new_release_published == 'true'
-        # Dependabot cannot update this pin either, for the same reason as the
-        # Semantic Release step above. v3.3.0 is available; this is a Docker
-        # action, so it is unaffected by the node20 deprecation, but the pin is
-        # several majors behind and has to be moved by hand.
+        # Held at v1.0.0 deliberately, despite v3.3.0 being available.
+        #
+        # v1 builds the action from a Dockerfile inside this pinned commit, so
+        # the SHA above pins everything that runs. From v3 the action instead
+        # pulls a pre-built image by mutable tag - v3.3.0 references
+        # docker://justintime50/homebrew-releaser:3.2.1 - which can be moved
+        # under us and defeats the point of pinning the action at all.
+        #
+        # What v3 buys is speed, ~30-60s against v1's ~120-200s. Our build of
+        # this image takes ~12s, so that is a problem we do not have. Revisit if
+        # v1 stops building or the tap needs something only v3 can do.
         uses: Justintime50/homebrew-releaser@8723315045b3b879065d4ce3e8ff143e6b958529  # v1.0.0
         with:
           # The name of the homebrew tap to publish your formula to as it appears on GitHub.

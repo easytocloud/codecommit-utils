@@ -17,3 +17,16 @@ updates:
         patterns:
           - "*"
     open-pull-requests-limit: 10
+    # Two majors are held back on purpose; see the comments in release.yml for
+    # the reasoning. Ignoring only the major keeps patches and minors flowing,
+    # so a security fix on the current major still reaches us.
+    ignore:
+      # v6 moves to semantic-release 25, a major bump of the tool that cuts our
+      # releases. To be done deliberately, not bundled into a dependency PR.
+      - dependency-name: "cycjimmy/semantic-release-action"
+        update-types: ["version-update:semver-major"]
+      # From v3 this action pulls a pre-built image by mutable Docker Hub tag,
+      # which defeats pinning it by SHA. v1 builds from a Dockerfile in the
+      # pinned commit.
+      - dependency-name: "Justintime50/homebrew-releaser"
+        update-types: ["version-update:semver-major"]
