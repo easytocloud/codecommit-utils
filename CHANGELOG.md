@@ -1,3 +1,10 @@
+## [0.7.2](https://github.com/easytocloud/codecommit-utils/compare/v0.7.1...v0.7.2) (2026-07-17)
+
+
+### Bug Fixes
+
+* **ci:** only push to the tap when a release was published ([c6a0a52](https://github.com/easytocloud/codecommit-utils/commit/c6a0a52943f0fe370e37839287cff13c616dad06)), closes [#1](https://github.com/easytocloud/codecommit-utils/issues/1) [#4](https://github.com/easytocloud/codecommit-utils/issues/4)
+
 ## [0.7.1](https://github.com/easytocloud/codecommit-utils/compare/v0.7.0...v0.7.1) (2026-07-17)
 
 
