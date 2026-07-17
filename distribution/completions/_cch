@@ -1,0 +1,82 @@
+#compdef cch
+
+_cch_repos() {
+    local -a repos
+    repos=(${(f)"$(cch repo list 2>/dev/null)"})
+    if [[ -n "$repos" ]]; then
+        _describe 'repositories' repos
+    else
+        _message 'No repositories found or unable to fetch repositories'
+    fi
+}
+
+_cch_repo() {
+    local curcontext="$curcontext" state line
+    local -a subcommands
+
+    subcommands=(
+        'list:List repositories'
+        'clone:Clone a repository'
+        'create:Create a repository'
+        'view:Show repository details'
+    )
+
+    _arguments -C \
+        '1: :->subcommand' \
+        '*:: :->args'
+
+    case $state in
+        subcommand)
+            _describe 'repo subcommand' subcommands
+            ;;
+        args)
+            case $words[1] in
+                list)
+                    _arguments \
+                        '--md[Write a REPOS.md file with repository details]' \
+                        '--help[Display help message]'
+                    ;;
+                clone|view)
+                    _cch_repos
+                    ;;
+                create)
+                    _arguments \
+                        '--clone[Clone the repository after creating it]' \
+                        '--readme[Seed a README.md, commit and push]' \
+                        '1:repository name:'
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+_cch() {
+    local curcontext="$curcontext" state line
+    local -a commands
+
+    commands=(
+        'repo:Work with repositories'
+        'help:Display help message'
+    )
+
+    _arguments -C \
+        '--version[Display version information]' \
+        '--help[Display help message]' \
+        '1: :->command' \
+        '*:: :->args'
+
+    case $state in
+        command)
+            _describe 'command' commands
+            ;;
+        args)
+            case $words[1] in
+                repo)
+                    _cch_repo
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+_cch "$@"

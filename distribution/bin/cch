@@ -1,0 +1,171 @@
+#!/usr/bin/env bash
+
+VERSION="0.7.0"
+
+show_help() {
+    echo "Usage: cch <command> <subcommand> [options]"
+    echo "Work with AWS CodeCommit repositories."
+    echo
+    echo "Commands:"
+    echo "  repo list            List repositories"
+    echo "  repo clone <name>    Clone a repository"
+    echo "  repo create <name>   Create a repository"
+    echo "  repo view <name>     Show repository details"
+    echo
+    echo "Options:"
+    echo "  --help               Display this help message"
+    echo "  --version            Display version information"
+}
+
+show_repo_help() {
+    echo "Usage: cch repo <subcommand> [options]"
+    echo
+    echo "Subcommands:"
+    echo "  list                 List repository names to stdout"
+    echo "    --md               Write a REPOS.md file with repository details"
+    echo "  clone <name>         Clone a repository over HTTPS"
+    echo "  create <name>        Create a repository"
+    echo "    --clone            Clone the repository after creating it"
+    echo "    --readme           Seed a README.md, commit and push (implies --clone)"
+    echo "  view <name>          Show repository metadata"
+}
+
+clone_url() {
+    aws codecommit get-repository \
+        --repository-name "$1" \
+        --query 'repositoryMetadata.cloneUrlHttp' \
+        --output text
+}
+
+repo_list() {
+    aws codecommit list-repositories --query 'repositories[].repositoryName' --output text | xargs -n1
+}
+
+repo_list_md() {
+    echo "# AWS CodeCommit Repositories
+
+This document lists the CodeCommit repositories available in the current AWS account and region.
+" > REPOS.md
+
+    repos=$(aws codecommit list-repositories --query 'repositories[*].repositoryName' --output text)
+
+    if [ -z "$repos" ]; then
+        rm REPOS.md
+        return
+    fi
+
+    for repo in $repos; do
+        description=$(aws codecommit get-repository --repository-name "$repo" --query 'repositoryMetadata.repositoryDescription' --output text)
+
+        [ "$description" = "None" ] && description="No description available"
+
+        {
+            echo "## $repo"
+            echo
+            echo "Description: $description"
+            echo
+        } >> REPOS.md
+    done
+}
+
+repo_clone() {
+    if [ -z "$1" ]; then
+        echo "cch: No repository name supplied - use 'cch repo list' to get a list of repositories" >&2
+        exit 1
+    fi
+
+    git clone "$(clone_url "$1")"
+}
+
+repo_create() {
+    local repo_name="" do_clone=0 do_readme=0
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --clone)  do_clone=1 ;;
+            --readme) do_readme=1; do_clone=1 ;;
+            -*)
+                echo "Error: Unknown option '$1'" >&2
+                exit 1
+                ;;
+            *)
+                if [ -n "$repo_name" ]; then
+                    echo "Error: Unexpected argument '$1'" >&2
+                    exit 1
+                fi
+                repo_name=$1
+                ;;
+        esac
+        shift
+    done
+
+    if [ -z "$repo_name" ]; then
+        echo "cch: No repository name supplied" >&2
+        exit 1
+    fi
+
+    aws codecommit create-repository --repository-name "$repo_name"
+
+    [ "$do_clone" -eq 1 ] || return 0
+
+    git clone "$(clone_url "$repo_name")"
+
+    [ "$do_readme" -eq 1 ] || return 0
+
+    cd "$repo_name" || exit 1
+    echo "# Welcome to $repo_name" > README.md
+    git add README.md
+    git commit -m "Initial commit with README.md"
+    git push
+}
+
+repo_view() {
+    if [ -z "$1" ]; then
+        echo "cch: No repository name supplied" >&2
+        exit 1
+    fi
+
+    aws codecommit get-repository --repository-name "$1" --query 'repositoryMetadata'
+}
+
+repo_cmd() {
+    local subcommand=$1
+    [ $# -gt 0 ] && shift
+
+    case "$subcommand" in
+        list)
+            case "$1" in
+                --md) repo_list_md ;;
+                --help) show_repo_help ;;
+                "") repo_list ;;
+                *)
+                    echo "Error: Unknown option '$1'" >&2
+                    exit 1
+                    ;;
+            esac
+            ;;
+        clone)  repo_clone "$@" ;;
+        create) repo_create "$@" ;;
+        view)   repo_view "$@" ;;
+        --help|"") show_repo_help ;;
+        *)
+            echo "Error: Unknown subcommand 'repo $subcommand'" >&2
+            echo "Use 'cch repo --help' for usage information." >&2
+            exit 1
+            ;;
+    esac
+}
+
+command=$1
+[ $# -gt 0 ] && shift
+
+case "$command" in
+    repo)      repo_cmd "$@" ;;
+    help|--help|"") show_help ;;
+    --version) echo "cch $VERSION" ;;
+    *)
+        echo "Error: Unknown command '$command'" >&2
+        echo "Use 'cch --help' for usage information." >&2
+        exit 1
+        ;;
+esac

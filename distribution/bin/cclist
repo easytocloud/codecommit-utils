@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-# Help function
+# cclist is a thin wrapper around 'cch repo list'
+
 show_help() {
     echo "Usage: cclist [OPTION]"
     echo "List AWS CodeCommit repositories or create a REPOS.md file."
@@ -12,49 +13,15 @@ show_help() {
     echo "If no option is provided, cclist will list repository names to stdout."
 }
 
-# Function to create REPOS.md file
-create_repos_md() {
-    echo "# AWS CodeCommit Repositories
-
-This document lists the CodeCommit repositories available in the current AWS account and region.
-" > REPOS.md
-
-    repos=$(aws codecommit list-repositories --query 'repositories[*].repositoryName' --output text)
-
-    if [ -z "$repos" ]; then
-        rm REPOS.md
-        return
-    fi
-
-    for repo in $repos; do
-        description=$(aws codecommit get-repository --repository-name "$repo" --query 'repositoryMetadata.repositoryDescription' --output text)
-        
-        [ "$description" = "None" ] && description="No description available"
-
-        {
-            echo "## $repo"
-            echo
-            echo "Description: $description"
-            echo
-        } >> REPOS.md
-    done
-}
-
-# Function to list repositories
-list_repositories() {
-    aws codecommit list-repositories --query 'repositories[].repositoryName' --output text | xargs -n1
-}
-
-# Main logic
 case "$1" in
     --create-repos-md)
-        create_repos_md
+        exec cch repo list --md
         ;;
     --help)
         show_help
         ;;
     "")
-        list_repositories
+        exec cch repo list
         ;;
     *)
         echo "Error: Unknown option '$1'" >&2
