@@ -40,7 +40,7 @@ _cch_completer() {
                 COMPREPLY=( $(compgen -W "--repo" -- "${cur}") )
                 ;;
             create)
-                COMPREPLY=( $(compgen -W "--title --body --base --head --repo" -- "${cur}") )
+                COMPREPLY=( $(compgen -W "--title --body --base --head --fill --no-push --force --repo" -- "${cur}") )
                 ;;
             merge)
                 COMPREPLY=( $(compgen -W "--squash --fast-forward --three-way --yes --repo" -- "${cur}") )

@@ -112,11 +112,22 @@ Fetch the pull request source branch from
 and check it out.
 .TP
 .B pr create
-Create a pull request and print its ID.
+Create a pull request, then print its ID and console URL.
+.IP
+The source branch is pushed to
+.B origin
+first, so a branch that exists only locally does not have to be pushed by hand.
+.IP
+Refuses to run when the source and destination branch are the same, or when the
+working tree has uncommitted changes, since neither can produce the pull request
+that was asked for. If a pull request is already open for the source branch, its
+ID and URL are printed and no second one is created.
 .RS
 .TP
 .BI \-\-title " title"
-Title of the pull request. Required.
+Title of the pull request. Required unless
+.B \-\-fill
+is given.
 .TP
 .BI \-\-body " body"
 Description of the pull request.
@@ -126,6 +137,24 @@ Destination branch. Defaults to the repository default branch.
 .TP
 .BI \-\-head " branch"
 Source branch. Defaults to the current branch.
+.TP
+.B \-\-fill
+Take the title from the subject of the latest commit, and the body from the
+subjects of the commits between the destination and source branch. Any
+explicit
+.B \-\-title
+or
+.B \-\-body
+still wins.
+.TP
+.B \-\-no\-push
+Do not push the source branch before creating the pull request. The branch has
+to already exist on
+.BR origin .
+.TP
+.B \-\-force
+Create the pull request even when the working tree has uncommitted changes.
+Only the committed and pushed state of the branch is included either way.
 .RE
 .TP
 .BI "pr merge " id

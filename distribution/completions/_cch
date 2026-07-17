@@ -100,6 +100,9 @@ _cch_pr() {
                         '--body[Description of the pull request]:body:' \
                         '--base[Destination branch]:branch:' \
                         '--head[Source branch]:branch:' \
+                        '--fill[Take the title and body from the commits]' \
+                        '--no-push[Do not push the source branch first]' \
+                        '--force[Create even with uncommitted changes present]' \
                         '--repo[Select a repository]:repository:_cch_repos'
                     ;;
                 merge)

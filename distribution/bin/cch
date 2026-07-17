@@ -80,10 +80,13 @@ show_pr_help() {
     echo "  view <id>            Show pull request details"
     echo "  checkout <id>        Fetch and check out the pull request source branch"
     echo "  create               Create a pull request"
-    echo "    --title <title>    Title of the pull request (required)"
+    echo "    --title <title>    Title of the pull request (required unless --fill)"
     echo "    --body <body>      Description of the pull request"
     echo "    --base <branch>    Destination branch (default: repository default branch)"
     echo "    --head <branch>    Source branch (default: current branch)"
+    echo "    --fill             Take the title and body from the commits"
+    echo "    --no-push          Do not push the source branch first"
+    echo "    --force            Create even with uncommitted changes present"
     echo "  merge <id>           Merge a pull request"
     echo "    --squash           Merge by squash (default)"
     echo "    --fast-forward     Merge by fast-forward"
@@ -371,23 +374,64 @@ pr_checkout() {
     git fetch origin "$branch" && git checkout "$branch"
 }
 
+# Print the console URL for a pull request. The region comes from the resolved
+# AWS configuration rather than the remote URL, so this stays correct for the
+# git-remote-codecommit and SSH remote forms, which need not carry a region.
+pr_url() {
+    local repo=$1 id=$2 region
+    region=$(aws configure get region 2>/dev/null)
+    [ -n "$region" ] || region=${AWS_REGION:-${AWS_DEFAULT_REGION:-}}
+    [ -n "$region" ] || return 1
+
+    printf 'https://%s.console.aws.amazon.com/codesuite/codecommit/repositories/%s/pull-requests/%s?region=%s\n' \
+        "$region" "$repo" "$id" "$region"
+}
+
+# Print the ID of the open pull request whose source is <branch>, if any.
+# CodeCommit cannot filter by source reference, so every open pull request has
+# to be fetched and compared.
+pr_open_for_branch() {
+    local repo=$1 branch=$2 ids id source_ref
+
+    ids=$(aws codecommit list-pull-requests \
+        --repository-name "$repo" \
+        --pull-request-status OPEN \
+        --query 'pullRequestIds[]' --output text)
+
+    [ -n "$ids" ] && [ "$ids" != "None" ] || return 1
+
+    for id in $ids; do
+        source_ref=$(aws codecommit get-pull-request --pull-request-id "$id" \
+            --query 'pullRequest.pullRequestTargets[0].sourceReference' --output text)
+        if [ "$source_ref" = "refs/heads/$branch" ]; then
+            echo "$id"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
 pr_create() {
-    local repo title="" body="" base="" head=""
+    local repo title="" body="" base="" head="" fill=0 push=1 force=0 existing id
 
     while [ $# -gt 0 ]; do
         case "$1" in
-            --title) title=$2; shift ;;
-            --body)  body=$2; shift ;;
-            --base)  base=$2; shift ;;
-            --head)  head=$2; shift ;;
-            --help)  show_pr_help; return 0 ;;
+            --title)   title=$2; shift ;;
+            --body)    body=$2; shift ;;
+            --base)    base=$2; shift ;;
+            --head)    head=$2; shift ;;
+            --fill)    fill=1 ;;
+            --no-push) push=0 ;;
+            --force)   force=1 ;;
+            --help)    show_pr_help; return 0 ;;
             *) echo "Error: Unknown option '$1'" >&2; exit 1 ;;
         esac
         shift
     done
 
-    if [ -z "$title" ]; then
-        echo "cch: --title is required" >&2
+    if [ -z "$title" ] && [ "$fill" -eq 0 ]; then
+        echo "cch: --title is required - or pass '--fill' to take it from the commits" >&2
         exit 1
     fi
 
@@ -410,11 +454,46 @@ pr_create() {
         fi
     fi
 
-    aws codecommit create-pull-request \
+    if [ "$head" = "$base" ]; then
+        echo "cch: refusing to open a pull request from $base into itself - check out a feature branch first:" >&2
+        echo "cch:   git checkout -b <feature-branch>" >&2
+        exit 1
+    fi
+
+    # Uncommitted work is not part of a pull request, so pushing here would open
+    # one against a stale snapshot of the branch.
+    if [ "$force" -eq 0 ] && [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+        echo "cch: uncommitted changes present - commit or stash them, or pass '--force':" >&2
+        git status --short >&2
+        exit 1
+    fi
+
+    # Report an existing pull request rather than failing on the duplicate that
+    # CodeCommit would reject anyway.
+    if existing=$(pr_open_for_branch "$repo" "$head"); then
+        echo "cch: pull request $existing is already open for $head" >&2
+        echo "$existing"
+        pr_url "$repo" "$existing" || true
+        return 0
+    fi
+
+    if [ "$fill" -eq 1 ]; then
+        [ -n "$title" ] || title=$(git log -1 --pretty=%s "$head")
+        [ -n "$body" ]  || body=$(git log "$base..$head" --pretty=format:'- %s')
+    fi
+
+    if [ "$push" -eq 1 ]; then
+        git push -u origin "$head" >&2 || exit 1
+    fi
+
+    id=$(aws codecommit create-pull-request \
         --title "$title" \
         ${body:+--description "$body"} \
         --targets "repositoryName=$repo,sourceReference=$head,destinationReference=$base" \
-        --query 'pullRequest.pullRequestId' --output text
+        --query 'pullRequest.pullRequestId' --output text) || exit 1
+
+    echo "$id"
+    pr_url "$repo" "$id" || true
 }
 
 # Show what is about to happen to a pull request and ask to proceed. Both

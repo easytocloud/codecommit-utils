@@ -79,9 +79,12 @@ cch pr list --state merged       # open, closed, merged or all
 cch pr view 7                    # show pull request details
 cch pr checkout 7                # fetch and check out the source branch
 cch pr create --title "Fix it"   # source is the current branch, destination the default branch
+cch pr create --fill             # title and body taken from the commits
 cch pr merge 7                   # merge by squash, after confirmation
 cch pr close 7                   # close without merging, after confirmation
 ```
+
+`cch pr create` pushes the current branch to `origin` before opening the pull request, so a branch that only exists locally does not have to be pushed by hand — pass `--no-push` to skip that. It refuses to run from the default branch, and refuses to run with uncommitted changes in the working tree, since only committed work can end up in the pull request; `--force` overrides the latter. If a pull request is already open for the branch, `cch` prints it instead of creating a duplicate. Use `--fill` to take the title from the last commit subject and the body from the commit log, in place of `--title` and `--body`.
 
 Pass `--repo <name>` to any `pr` subcommand to select a repository explicitly, for example when working outside a clone.
 
