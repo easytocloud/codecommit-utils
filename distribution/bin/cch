@@ -1,6 +1,52 @@
 #!/usr/bin/env bash
 
-VERSION="0.7.0"
+# Resolve this script's real path, following symlinks. Homebrew links
+# bin/cch into the Cellar, so the link has to be followed to see the version.
+self_path() {
+    local src=$0 dir
+    while [ -L "$src" ]; do
+        dir=$(cd -P "$(dirname "$src")" && pwd)
+        src=$(readlink "$src")
+        # a relative link resolves against the directory holding the link
+        case "$src" in
+            /*) ;;
+            *) src=$dir/$src ;;
+        esac
+    done
+    printf '%s\n' "$(cd -P "$(dirname "$src")" && pwd)/$(basename "$src")"
+}
+
+# Report the installed version, preferring Homebrew as the authoritative
+# source. Homebrew installs to <prefix>/Cellar/<formula>/<version>/bin/cch, so
+# the version is taken from the path rather than by shelling out to brew, which
+# is slow. Outside a Homebrew install fall back to describing the checkout.
+show_version() {
+    local path version
+
+    path=$(self_path)
+    case "$path" in
+        */Cellar/codecommit-utils/*)
+            version=${path#*/Cellar/codecommit-utils/}
+            version=${version%%/*}
+            echo "cch $version"
+            return 0
+            ;;
+    esac
+
+    # Only trust git if this script is actually tracked by the repository it
+    # sits in, so a copy dropped into an unrelated checkout cannot report that
+    # project's tags as its own.
+    local dir=${path%/*}
+    if git -C "$dir" ls-files --error-unmatch "$path" >/dev/null 2>&1; then
+        version=$(git -C "$dir" describe --tags --always --dirty 2>/dev/null)
+        if [ -n "$version" ]; then
+            echo "cch ${version#v} (dev)"
+            return 0
+        fi
+    fi
+
+    echo "cch (unknown version)"
+}
 
 show_help() {
     echo "Usage: cch <command> <subcommand> [options]"
@@ -11,10 +57,83 @@ show_help() {
     echo "  repo clone <name>    Clone a repository"
     echo "  repo create <name>   Create a repository"
     echo "  repo view <name>     Show repository details"
+    echo "  pr list              List pull requests"
+    echo "  pr view <id>         Show pull request details"
+    echo "  pr checkout <id>     Check out a pull request branch"
+    echo "  pr create            Create a pull request"
+    echo "  pr merge <id>        Merge a pull request"
+    echo "  pr close <id>        Close a pull request without merging it"
     echo
     echo "Options:"
     echo "  --help               Display this help message"
     echo "  --version            Display version information"
+}
+
+show_pr_help() {
+    echo "Usage: cch pr <subcommand> [options]"
+    echo
+    echo "Subcommands:"
+    echo "  list                 List pull requests in the current repository"
+    echo "    --state <state>    Filter by open|closed|merged|all (default: open)"
+    echo "    --author <arn>     Filter by author ARN"
+    echo "    --limit <n>        Maximum number to list (default: 30)"
+    echo "  view <id>            Show pull request details"
+    echo "  checkout <id>        Fetch and check out the pull request source branch"
+    echo "  create               Create a pull request"
+    echo "    --title <title>    Title of the pull request (required)"
+    echo "    --body <body>      Description of the pull request"
+    echo "    --base <branch>    Destination branch (default: repository default branch)"
+    echo "    --head <branch>    Source branch (default: current branch)"
+    echo "  merge <id>           Merge a pull request"
+    echo "    --squash           Merge by squash (default)"
+    echo "    --fast-forward     Merge by fast-forward"
+    echo "    --three-way        Merge by three-way merge"
+    echo "    --yes              Do not prompt for confirmation"
+    echo "  close <id>           Close a pull request without merging it"
+    echo "    --delete-branch    Delete the source branch after closing"
+    echo "    --yes              Do not prompt for confirmation"
+    echo
+    echo "Options:"
+    echo "  --repo <name>        Select a repository, overriding remote inference"
+}
+
+# Derive the CodeCommit repository name from the origin remote.
+# Supports the HTTPS, SSH and git-remote-codecommit URL forms.
+current_repo() {
+    local url
+    url=$(git config --get remote.origin.url 2>/dev/null) || return 1
+    [ -n "$url" ] || return 1
+
+    case "$url" in
+        # codecommit::eu-west-1://repo  |  codecommit://repo
+        codecommit::*://*|codecommit://*)
+            url=${url##*://}
+            # strip an optional profile@ prefix
+            echo "${url##*@}"
+            ;;
+        # https://git-codecommit.<region>.amazonaws.com/v1/repos/<name>
+        # ssh://git-codecommit.<region>.amazonaws.com/v1/repos/<name>
+        *codecommit*/v1/repos/*)
+            echo "${url##*/v1/repos/}"
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+# Resolve the repository to act on. Callers use this in a command substitution,
+# so a failure here cannot exit the script directly - it returns non-zero and
+# the caller is expected to bail.
+resolve_repo() {
+    if [ -n "$OPT_REPO" ]; then
+        echo "$OPT_REPO"
+        return 0
+    fi
+    current_repo && return 0
+    echo "cch: could not determine the CodeCommit repository from the origin remote" >&2
+    echo "Use '--repo <name>' to select one." >&2
+    return 1
 }
 
 show_repo_help() {
@@ -128,6 +247,307 @@ repo_view() {
     aws codecommit get-repository --repository-name "$1" --query 'repositoryMetadata'
 }
 
+# Print "id<TAB>title<TAB>author<TAB>state" for a pull request, where state is
+# OPEN, MERGED or CLOSED. CodeCommit only tracks OPEN and CLOSED, so MERGED is
+# derived from the merge metadata on the pull request targets.
+pr_summary() {
+    aws codecommit get-pull-request --pull-request-id "$1" --output text \
+        --query 'pullRequest.[pullRequestId,title,authorArn,pullRequestStatus,pullRequestTargets[0].mergeMetadata.isMerged]' \
+    | while IFS=$'\t' read -r id title author status merged; do
+        if [ "$status" = "CLOSED" ] && [ "$merged" = "True" ]; then
+            status=MERGED
+        fi
+        # An author ARN ends in the user name for IAM users, but in the session
+        # name for assumed roles, which for IAM Identity Center is an email
+        # address. Drop the domain so both forms fit the column.
+        author=${author##*/}
+        author=${author%%@*}
+        printf '%s\t%s\t%s\t%s\n' "$id" "$title" "$author" "$status"
+    done
+}
+
+pr_list() {
+    local repo state=OPEN filter="" limit=30 ids id
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --state)
+                case "$2" in
+                    open)   state=OPEN ;;
+                    closed) state=CLOSED; filter=CLOSED ;;
+                    merged) state=CLOSED; filter=MERGED ;;
+                    all)    state="" ;;
+                    *) echo "cch: invalid state '$2' - use open, closed, merged or all" >&2; exit 1 ;;
+                esac
+                shift
+                ;;
+            --author) OPT_AUTHOR=$2; shift ;;
+            --limit)  limit=$2; shift ;;
+            --help)   show_pr_help; return 0 ;;
+            *) echo "Error: Unknown option '$1'" >&2; exit 1 ;;
+        esac
+        shift
+    done
+
+    repo=$(resolve_repo) || exit 1
+
+    ids=$(aws codecommit list-pull-requests \
+        --repository-name "$repo" \
+        ${state:+--pull-request-status "$state"} \
+        ${OPT_AUTHOR:+--author-arn "$OPT_AUTHOR"} \
+        --max-items "$limit" \
+        --query 'pullRequestIds[]' --output text)
+
+    if [ -z "$ids" ] || [ "$ids" = "None" ]; then
+        echo "No pull requests match your search in $repo" >&2
+        return 0
+    fi
+
+    # Collect the rows before printing, so a filter that matches nothing reports
+    # that rather than printing a header with no rows under it.
+    local rows
+    rows=$(for id in $ids; do
+        pr_summary "$id"
+    done | if [ -n "$filter" ]; then awk -F'\t' -v s="$filter" '$4 == s'; else cat; fi)
+
+    if [ -z "$rows" ]; then
+        echo "No pull requests match your search in $repo" >&2
+        return 0
+    fi
+
+    {
+        printf 'ID\tTITLE\tAUTHOR\tSTATE\n'
+        printf '%s\n' "$rows"
+    } | awk -F'\t' '{ printf "%-6s %-52.52s %-18.18s %s\n", $1, $2, $3, $4 }'
+}
+
+pr_view() {
+    local id=$1
+
+    if [ -z "$id" ]; then
+        echo "cch: No pull request ID supplied" >&2
+        exit 1
+    fi
+
+    # Pull request IDs are account-wide, so no repository is needed here, but
+    # resolving one keeps the error consistent when run outside a repository.
+    resolve_repo > /dev/null || exit 1
+    aws codecommit get-pull-request --pull-request-id "$id" --query 'pullRequest'
+}
+
+pr_checkout() {
+    local id=$1 branch
+
+    if [ -z "$id" ]; then
+        echo "cch: No pull request ID supplied" >&2
+        exit 1
+    fi
+
+    branch=$(aws codecommit get-pull-request --pull-request-id "$id" \
+        --query 'pullRequest.pullRequestTargets[0].sourceReference' --output text)
+
+    if [ -z "$branch" ] || [ "$branch" = "None" ]; then
+        echo "cch: could not determine the source branch for pull request $id" >&2
+        exit 1
+    fi
+
+    branch=${branch#refs/heads/}
+    git fetch origin "$branch" && git checkout "$branch"
+}
+
+pr_create() {
+    local repo title="" body="" base="" head=""
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --title) title=$2; shift ;;
+            --body)  body=$2; shift ;;
+            --base)  base=$2; shift ;;
+            --head)  head=$2; shift ;;
+            --help)  show_pr_help; return 0 ;;
+            *) echo "Error: Unknown option '$1'" >&2; exit 1 ;;
+        esac
+        shift
+    done
+
+    if [ -z "$title" ]; then
+        echo "cch: --title is required" >&2
+        exit 1
+    fi
+
+    repo=$(resolve_repo) || exit 1
+
+    if [ -z "$head" ]; then
+        head=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+        if [ -z "$head" ] || [ "$head" = "HEAD" ]; then
+            echo "cch: could not determine the current branch - use '--head <branch>'" >&2
+            exit 1
+        fi
+    fi
+
+    if [ -z "$base" ]; then
+        base=$(aws codecommit get-repository --repository-name "$repo" \
+            --query 'repositoryMetadata.defaultBranch' --output text)
+        if [ -z "$base" ] || [ "$base" = "None" ]; then
+            echo "cch: $repo has no default branch - use '--base <branch>'" >&2
+            exit 1
+        fi
+    fi
+
+    aws codecommit create-pull-request \
+        --title "$title" \
+        ${body:+--description "$body"} \
+        --targets "repositoryName=$repo,sourceReference=$head,destinationReference=$base" \
+        --query 'pullRequest.pullRequestId' --output text
+}
+
+# Show what is about to happen to a pull request and ask to proceed. Both
+# merging and closing are irreversible, so this refuses to guess when there is
+# no terminal to prompt on.
+# Usage: pr_confirm <verb> <gerund> <pull-request-id>
+pr_confirm() {
+    local verb=$1 gerund=$2 id=$3 reply
+
+    if [ ! -t 0 ]; then
+        echo "cch: refusing to $verb without confirmation - pass '--yes' to proceed" >&2
+        return 1
+    fi
+
+    pr_summary "$id" | awk -F'\t' -v v="$gerund" \
+        '{ printf "%s%s #%s: %s (by %s)\n", toupper(substr(v,1,1)), substr(v,2), $1, $2, $3 }'
+    printf 'Continue? [y/N] '
+    read -r reply
+    case "$reply" in
+        [yY]|[yY][eE][sS]) return 0 ;;
+        *) echo "Cancelled." >&2; return 1 ;;
+    esac
+}
+
+pr_merge() {
+    local repo id="" api=merge-pull-request-by-squash confirm=1
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --squash)       api=merge-pull-request-by-squash ;;
+            --fast-forward) api=merge-pull-request-by-fast-forward ;;
+            --three-way)    api=merge-pull-request-by-three-way ;;
+            --yes)          confirm=0 ;;
+            --help)         show_pr_help; return 0 ;;
+            -*) echo "Error: Unknown option '$1'" >&2; exit 1 ;;
+            *)
+                if [ -n "$id" ]; then
+                    echo "Error: Unexpected argument '$1'" >&2
+                    exit 1
+                fi
+                id=$1
+                ;;
+        esac
+        shift
+    done
+
+    if [ -z "$id" ]; then
+        echo "cch: No pull request ID supplied" >&2
+        exit 1
+    fi
+
+    repo=$(resolve_repo) || exit 1
+
+    if [ "$confirm" -eq 1 ]; then
+        pr_confirm merge merging "$id" || exit 1
+    fi
+
+    aws codecommit "$api" --pull-request-id "$id" --repository-name "$repo"
+}
+
+# Close a pull request without merging it, the equivalent of 'gh pr close'.
+# CodeCommit has no reopen: the only transitions are OPEN to CLOSED and the
+# no-ops, so this cannot be undone.
+pr_close() {
+    local repo id="" confirm=1 delete_branch=0 branch
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --delete-branch) delete_branch=1 ;;
+            --yes)           confirm=0 ;;
+            --help)          show_pr_help; return 0 ;;
+            -*) echo "Error: Unknown option '$1'" >&2; exit 1 ;;
+            *)
+                if [ -n "$id" ]; then
+                    echo "Error: Unexpected argument '$1'" >&2
+                    exit 1
+                fi
+                id=$1
+                ;;
+        esac
+        shift
+    done
+
+    if [ -z "$id" ]; then
+        echo "cch: No pull request ID supplied" >&2
+        exit 1
+    fi
+
+    repo=$(resolve_repo) || exit 1
+
+    if [ "$confirm" -eq 1 ]; then
+        pr_confirm close closing "$id" || exit 1
+    fi
+
+    # Read the source branch before closing, while the pull request is still
+    # the thing being described.
+    if [ "$delete_branch" -eq 1 ]; then
+        branch=$(aws codecommit get-pull-request --pull-request-id "$id" \
+            --query 'pullRequest.pullRequestTargets[0].sourceReference' --output text)
+        branch=${branch#refs/heads/}
+    fi
+
+    aws codecommit update-pull-request-status \
+        --pull-request-id "$id" \
+        --pull-request-status CLOSED \
+        --query 'pullRequest.[pullRequestId,pullRequestStatus]' --output text || exit 1
+
+    [ "$delete_branch" -eq 1 ] || return 0
+
+    if [ -z "$branch" ] || [ "$branch" = "None" ]; then
+        echo "cch: could not determine the source branch of pull request $id - not deleting" >&2
+        exit 1
+    fi
+
+    # CodeCommit refuses to delete a default branch, so no guard is needed here.
+    aws codecommit delete-branch --repository-name "$repo" --branch-name "$branch"
+}
+
+pr_cmd() {
+    local subcommand=$1
+    [ $# -gt 0 ] && shift
+
+    # --repo is accepted anywhere in the argument list, like gh
+    local -a args=()
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --repo) OPT_REPO=$2; shift ;;
+            *) args+=("$1") ;;
+        esac
+        shift
+    done
+    set -- "${args[@]}"
+
+    case "$subcommand" in
+        list)     pr_list "$@" ;;
+        view)     pr_view "$@" ;;
+        checkout) pr_checkout "$@" ;;
+        create)   pr_create "$@" ;;
+        merge)    pr_merge "$@" ;;
+        close)    pr_close "$@" ;;
+        --help|"") show_pr_help ;;
+        *)
+            echo "Error: Unknown subcommand 'pr $subcommand'" >&2
+            echo "Use 'cch pr --help' for usage information." >&2
+            exit 1
+            ;;
+    esac
+}
+
 repo_cmd() {
     local subcommand=$1
     [ $# -gt 0 ] && shift
@@ -161,8 +581,9 @@ command=$1
 
 case "$command" in
     repo)      repo_cmd "$@" ;;
+    pr)        pr_cmd "$@" ;;
     help|--help|"") show_help ;;
-    --version) echo "cch $VERSION" ;;
+    --version) show_version ;;
     *)
         echo "Error: Unknown command '$command'" >&2
         echo "Use 'cch --help' for usage information." >&2

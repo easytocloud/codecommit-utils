@@ -50,12 +50,86 @@ _cch_repo() {
     esac
 }
 
+_cch_prs() {
+    local -a prs
+    prs=(${(f)"$(cch pr list --state all 2>/dev/null | awk 'NR>1 { id=$1; $1=""; sub(/^ +/,""); printf "%s:%s\n", id, $0 }')"})
+    if [[ -n "$prs" ]]; then
+        _describe 'pull requests' prs
+    else
+        _message 'No pull requests found'
+    fi
+}
+
+_cch_pr() {
+    local curcontext="$curcontext" state line
+    local -a subcommands
+
+    subcommands=(
+        'list:List pull requests'
+        'view:Show pull request details'
+        'checkout:Check out a pull request branch'
+        'create:Create a pull request'
+        'merge:Merge a pull request'
+        'close:Close a pull request without merging it'
+    )
+
+    _arguments -C \
+        '--repo[Select a repository]:repository:_cch_repos' \
+        '1: :->subcommand' \
+        '*:: :->args'
+
+    case $state in
+        subcommand)
+            _describe 'pr subcommand' subcommands
+            ;;
+        args)
+            case $words[1] in
+                list)
+                    _arguments \
+                        '--state[Filter by state]:state:(open closed merged all)' \
+                        '--author[Filter by author ARN]:arn:' \
+                        '--limit[Maximum number to list]:number:' \
+                        '--repo[Select a repository]:repository:_cch_repos'
+                    ;;
+                view|checkout)
+                    _cch_prs
+                    ;;
+                create)
+                    _arguments \
+                        '--title[Title of the pull request]:title:' \
+                        '--body[Description of the pull request]:body:' \
+                        '--base[Destination branch]:branch:' \
+                        '--head[Source branch]:branch:' \
+                        '--repo[Select a repository]:repository:_cch_repos'
+                    ;;
+                merge)
+                    _arguments \
+                        '--squash[Merge by squash]' \
+                        '--fast-forward[Merge by fast-forward]' \
+                        '--three-way[Merge by three-way merge]' \
+                        '--yes[Do not prompt for confirmation]' \
+                        '--repo[Select a repository]:repository:_cch_repos' \
+                        '1:pull request:_cch_prs'
+                    ;;
+                close)
+                    _arguments \
+                        '--delete-branch[Delete the source branch after closing]' \
+                        '--yes[Do not prompt for confirmation]' \
+                        '--repo[Select a repository]:repository:_cch_repos' \
+                        '1:pull request:_cch_prs'
+                    ;;
+            esac
+            ;;
+    esac
+}
+
 _cch() {
     local curcontext="$curcontext" state line
     local -a commands
 
     commands=(
         'repo:Work with repositories'
+        'pr:Work with pull requests'
         'help:Display help message'
     )
 
@@ -73,6 +147,9 @@ _cch() {
             case $words[1] in
                 repo)
                     _cch_repo
+                    ;;
+                pr)
+                    _cch_pr
                     ;;
             esac
             ;;
