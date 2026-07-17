@@ -45,7 +45,7 @@ jobs:
         # for this action and never opens a PR. Bump it by hand.
         # v5 is the node24 release; v6 additionally moves to semantic-release 25,
         # which is a change to the release engine rather than a CI runtime fix.
-        uses: cycjimmy/semantic-release-action@ba330626c4750c19d8299de843f05c7aa5574f62  # v5.0.2
+        uses: cycjimmy/semantic-release-action@b12c8f6015dc215fe37bc154d4ad456dd3833c90  # v6.0.0
         env:
           GH_TOKEN: ${{ steps.load-github-credentials.outputs.HOMEBREW_TAP_GITHUB_TOKEN }}
 
@@ -60,7 +60,7 @@ jobs:
         # Semantic Release step above. v3.3.0 is available; this is a Docker
         # action, so it is unaffected by the node20 deprecation, but the pin is
         # several majors behind and has to be moved by hand.
-        uses: Justintime50/homebrew-releaser@8723315045b3b879065d4ce3e8ff143e6b958529  # v1.0.0
+        uses: Justintime50/homebrew-releaser@a62d7a359683bfc047cdb2431f53ee58241464d1  # v3.3.0
         with:
           # The name of the homebrew tap to publish your formula to as it appears on GitHub.
           # Required - strings.
