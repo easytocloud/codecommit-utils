@@ -2,7 +2,17 @@
 
 ![release workflow](https://github.com/easytocloud/codecommit-utils/actions/workflows/release.yml/badge.svg)
 
-A collection of command-line utilities to simplify working with AWS CodeCommit repositories.
+Brings `gh`-style shorthand to AWS CodeCommit repositories and pull requests.
+
+```bash
+brew install easytocloud/tap/codecommit-utils
+```
+
+```bash
+cch repo list                    # instead of aws codecommit list-repositories --query ...
+cch pr create --title "Fix it"   # instead of aws codecommit create-pull-request --targets ...
+cch pr merge 7                   # instead of aws codecommit merge-pull-request-by-squash ...
+```
 
 ## Introduction
 
@@ -12,7 +22,7 @@ A collection of command-line utilities to simplify working with AWS CodeCommit r
 
 This package provides the following utilities:
 
-- `cch`: A `gh`-style command for AWS CodeCommit. This is the recommended entry point.
+- `cch`: A `gh`-style command for AWS CodeCommit, covering repositories and pull requests. This is the recommended entry point.
 - `cclist`: List all AWS CodeCommit repositories in your account.
 - `ccclone`: Clone a specific AWS CodeCommit repository.
 - `ccinit`: Initialize a new AWS CodeCommit repository with a dummy README.md file.
@@ -21,11 +31,23 @@ This package provides the following utilities:
 
 ## Installation
 
-You can easily install `codecommit-utils` using Homebrew:
+Install `codecommit-utils` using Homebrew:
 
 ```bash
 brew install easytocloud/tap/codecommit-utils
 ```
+
+That single command taps `easytocloud/tap` and installs in one step. To tap first and browse what else the tap offers:
+
+```bash
+brew tap easytocloud/tap
+brew search easytocloud/tap
+brew install codecommit-utils
+```
+
+Once the tap is installed, `brew search codecommit` finds this formula too. Upgrade with `brew upgrade codecommit-utils`, and check what you are running with `cch --version`.
+
+These tools call the AWS CLI, so they use whatever credentials and region your current profile provides. Set `AWS_PROFILE` and `AWS_REGION` as usual.
 
 ## Usage
 
@@ -46,6 +68,24 @@ cch repo view repository-name    # show repository metadata
 ```bash
 cch repo create repository-name --readme
 ```
+
+`cch` also works with pull requests. Inside a cloned CodeCommit repository the repository is inferred from the `origin` remote, so no repository name is needed:
+
+```bash
+cch pr list                      # list open pull requests
+cch pr list --state merged       # open, closed, merged or all
+cch pr view 7                    # show pull request details
+cch pr checkout 7                # fetch and check out the source branch
+cch pr create --title "Fix it"   # source is the current branch, destination the default branch
+cch pr merge 7                   # merge by squash, after confirmation
+cch pr close 7                   # close without merging, after confirmation
+```
+
+Pass `--repo <name>` to any `pr` subcommand to select a repository explicitly, for example when working outside a clone.
+
+`cch pr merge` and `cch pr close` both prompt for confirmation, and refuse to run non-interactively unless `--yes` is passed. Use `--squash` (the default), `--fast-forward` or `--three-way` to choose a merge strategy. `cch pr close --delete-branch` deletes the source branch after closing.
+
+Note that CodeCommit only tracks pull requests as `OPEN` or `CLOSED`, and a closed pull request cannot be reopened. `cch` reports a closed and merged pull request as `MERGED`, which it derives from the pull request's merge metadata, so `cch pr list` distinguishes a merged pull request from one that was closed without merging.
 
 The equivalents of the original commands are:
 
