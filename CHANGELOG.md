@@ -1,3 +1,10 @@
+# [0.8.0](https://github.com/easytocloud/codecommit-utils/compare/v0.7.2...v0.8.0) (2026-07-17)
+
+
+### Features
+
+* **pr:** push, guard and fill on 'pr create' ([ef0481b](https://github.com/easytocloud/codecommit-utils/commit/ef0481ba759d8dff1f6aa283a41af7784de527c3))
+
 ## [0.7.2](https://github.com/easytocloud/codecommit-utils/compare/v0.7.1...v0.7.2) (2026-07-17)
 
 
