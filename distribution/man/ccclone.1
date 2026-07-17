@@ -1,0 +1,59 @@
+.TH CCCLONE 1 "2026-07-17" "codecommit-utils" "User Commands"
+.SH NAME
+ccclone \- clone an AWS CodeCommit repository
+.SH SYNOPSIS
+.B ccclone
+.I repository\-name
+.SH DESCRIPTION
+.B ccclone
+is
+.BR "git clone" (1)
+for CodeCommit: it clones the named repository over HTTPS into the current
+directory. The clone URL is read from the repository metadata, so only the
+repository name is needed.
+.PP
+It is a thin wrapper around
+.BR cch (1),
+which holds the implementation:
+.PP
+.RS
+.nf
+ccclone \fIrepository\-name\fR    is  cch repo clone \fIrepository\-name\fR
+.fi
+.RE
+.PP
+Both spellings are fully supported.
+.BR cch (1)
+is the recommended entry point for new work.
+.PP
+Use
+.BR cclist (1)
+or
+.B cch repo list
+to see the available repository names. When zsh completions are enabled,
+completion on the repository name lists the repositories for the current AWS
+profile.
+.SH ENVIRONMENT
+.TP
+.B AWS_PROFILE
+The AWS profile whose credentials and region are used, as for the AWS CLI.
+.TP
+.B AWS_REGION
+The AWS region to operate in, as for the AWS CLI.
+.SH EXIT STATUS
+Exits 0 on success, and 1 when no repository name is supplied. Failures
+reported by the AWS CLI or by
+.BR git (1)
+propagate their own exit status.
+.SH SEE ALSO
+.BR cch (1),
+.BR cclist (1),
+.BR ccinit (1),
+.BR git (1),
+.BR aws (1)
+.SH BUGS
+Report bugs at https://github.com/easytocloud/codecommit\-utils/issues .
+.SH AUTHOR
+Developed by easytocloud.
+.SH COPYRIGHT
+MIT License.

@@ -1,0 +1,60 @@
+.TH CCLIST 1 "2026-07-17" "codecommit-utils" "User Commands"
+.SH NAME
+cclist \- list AWS CodeCommit repositories
+.SH SYNOPSIS
+.B cclist
+.RB [ \-\-create\-repos\-md ]
+.RB [ \-\-help ]
+.SH DESCRIPTION
+.B cclist
+lists the AWS CodeCommit repositories in the current account and region, one
+name per line.
+.PP
+It is a thin wrapper around
+.BR cch (1),
+which holds the implementation:
+.PP
+.RS
+.nf
+cclist                    is  cch repo list
+cclist \-\-create\-repos\-md   is  cch repo list \-\-md
+.fi
+.RE
+.PP
+Both spellings are fully supported.
+.BR cch (1)
+is the recommended entry point for new work, and documents the behaviour in
+detail.
+.SH OPTIONS
+.TP
+.B \-\-create\-repos\-md
+Write a
+.B REPOS.md
+file in the current directory listing each repository with its description,
+instead of printing names. Repositories without a description are recorded as
+"No description available". If the account has no repositories, no file is
+written.
+.TP
+.B \-\-help
+Display help and exit.
+.SH ENVIRONMENT
+.TP
+.B AWS_PROFILE
+The AWS profile whose credentials and region are used, as for the AWS CLI.
+.TP
+.B AWS_REGION
+The AWS region to operate in, as for the AWS CLI.
+.SH EXIT STATUS
+Exits 0 on success, and 1 on an unknown option or when the underlying AWS CLI
+call fails.
+.SH SEE ALSO
+.BR cch (1),
+.BR ccclone (1),
+.BR ccinit (1),
+.BR aws (1)
+.SH BUGS
+Report bugs at https://github.com/easytocloud/codecommit\-utils/issues .
+.SH AUTHOR
+Developed by easytocloud.
+.SH COPYRIGHT
+MIT License.

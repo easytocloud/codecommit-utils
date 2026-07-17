@@ -47,6 +47,8 @@ brew install codecommit-utils
 
 Once the tap is installed, `brew search codecommit` finds this formula too. Upgrade with `brew upgrade codecommit-utils`, and check what you are running with `cch --version`.
 
+Man pages ship with the formula, so `man cch` works once installed — along with `man cclist`, `man ccclone` and `man ccinit`. The man pages are the full reference; this README is the tour.
+
 These tools call the AWS CLI, so they use whatever credentials and region your current profile provides. Set `AWS_PROFILE` and `AWS_REGION` as usual.
 
 ## Usage

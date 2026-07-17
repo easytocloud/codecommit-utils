@@ -1,0 +1,323 @@
+.TH CCH 1 "2026-07-17" "codecommit-utils" "User Commands"
+.SH NAME
+cch \- work with AWS CodeCommit repositories and pull requests
+.SH SYNOPSIS
+.B cch
+.I command
+.I subcommand
+.RI [ options ]
+.PP
+.B cch
+.RB [ \-\-help ]
+.RB [ \-\-version ]
+.SH DESCRIPTION
+.B cch
+brings
+.BR gh (1)-style
+shorthand to AWS CodeCommit, replacing lengthy
+.B aws codecommit
+invocations with short commands grouped under
+.B repo
+and
+.BR pr .
+.PP
+Every operation shells out to the AWS CLI, so
+.B cch
+uses whatever credentials and region the current profile provides. Repository
+and pull request data are never cached.
+.PP
+Within a cloned CodeCommit repository the repository name is inferred from the
+.B origin
+remote, so
+.B pr
+subcommands need no repository argument. See
+.B REPOSITORY INFERENCE
+below.
+.SH COMMANDS
+.SS repo
+.TP
+.B repo list
+List repository names on standard output, one per line.
+.RS
+.TP
+.B \-\-md
+Write a
+.B REPOS.md
+file in the current directory listing each repository with its description,
+instead of printing names. Repositories without a description are recorded as
+"No description available". If the account has no repositories, no file is
+written.
+.RE
+.TP
+.BI "repo clone " name
+Clone a repository over HTTPS. The clone URL is read from the repository
+metadata; SSH and git-remote-codecommit URLs are not used.
+.TP
+.BI "repo create " name
+Create an empty repository.
+.RS
+.TP
+.B \-\-clone
+Clone the repository after creating it.
+.TP
+.B \-\-readme
+Seed a
+.BR README.md ,
+commit and push it. Implies
+.BR \-\-clone .
+.RE
+.TP
+.BI "repo view " name
+Print the repository metadata as JSON.
+.SS pr
+All
+.B pr
+subcommands accept
+.BI \-\-repo " name"
+anywhere in the argument list; see
+.BR OPTIONS .
+.TP
+.B pr list
+List pull requests in the current repository as columns of ID, TITLE, AUTHOR
+and STATE. Titles and author names are truncated to fit. When nothing matches,
+a message is printed on standard error and the exit status is still 0.
+.RS
+.TP
+.BI \-\-state " state"
+Filter by
+.BR open ,
+.BR closed ,
+.B merged
+or
+.BR all .
+The default is
+.BR open .
+.TP
+.BI \-\-author " arn"
+Filter by author ARN.
+.TP
+.BI \-\-limit " n"
+List at most
+.I n
+pull requests. The default is 30.
+.RE
+.TP
+.BI "pr view " id
+Print the pull request as JSON. Pull request IDs are unique across the account,
+so the repository only affects error reporting.
+.TP
+.BI "pr checkout " id
+Fetch the pull request source branch from
+.B origin
+and check it out.
+.TP
+.B pr create
+Create a pull request and print its ID.
+.RS
+.TP
+.BI \-\-title " title"
+Title of the pull request. Required.
+.TP
+.BI \-\-body " body"
+Description of the pull request.
+.TP
+.BI \-\-base " branch"
+Destination branch. Defaults to the repository default branch.
+.TP
+.BI \-\-head " branch"
+Source branch. Defaults to the current branch.
+.RE
+.TP
+.BI "pr merge " id
+Merge a pull request. Prompts for confirmation unless
+.B \-\-yes
+is given; see
+.BR CONFIRMATION .
+.RS
+.TP
+.B \-\-squash
+Merge by squash. This is the default.
+.TP
+.B \-\-fast\-forward
+Merge by fast\-forward.
+.TP
+.B \-\-three\-way
+Merge by three\-way merge.
+.TP
+.B \-\-yes
+Do not prompt for confirmation.
+.RE
+.TP
+.BI "pr close " id
+Close a pull request without merging it. Prompts for confirmation unless
+.B \-\-yes
+is given; see
+.BR CONFIRMATION .
+.RS
+.TP
+.B \-\-delete\-branch
+Delete the source branch after closing. CodeCommit refuses to delete a default
+branch.
+.TP
+.B \-\-yes
+Do not prompt for confirmation.
+.RE
+.SH OPTIONS
+.TP
+.B \-\-help
+Display help and exit. Accepted by
+.BR cch ,
+by
+.B repo
+and
+.BR pr ,
+and by most of their subcommands.
+.TP
+.B \-\-version
+Display version information and exit.
+.TP
+.BI \-\-repo " name"
+Select a repository explicitly, overriding inference from the
+.B origin
+remote. Accepted anywhere in the argument list of any
+.B pr
+subcommand, which makes it usable outside a clone.
+.SH REPOSITORY INFERENCE
+Unless
+.B \-\-repo
+is given,
+.B cch
+derives the repository name from the
+.B origin
+remote of the current git repository. Three URL forms are recognised:
+.PP
+.RS
+.nf
+codecommit::\fIregion\fR://\fIrepo\fR
+codecommit://\fIrepo\fR
+https://git\-codecommit.\fIregion\fR.amazonaws.com/v1/repos/\fIrepo\fR
+.fi
+.RE
+.PP
+The
+.B ssh://
+form of the last URL is recognised too, and an optional
+.IB profile @
+prefix on the git\-remote\-codecommit forms is ignored. Any other remote, or no
+remote at all, is an error advising the use of
+.BR "\-\-repo " name .
+.SH PULL REQUEST STATES
+CodeCommit tracks a pull request as only
+.B OPEN
+or
+.BR CLOSED ,
+and a closed pull request cannot be reopened.
+.B cch
+reports a third state,
+.BR MERGED ,
+which it derives from the merge metadata on the pull request targets: a pull
+request that is closed and merged is reported as
+.BR MERGED ,
+one closed without merging as
+.BR CLOSED .
+This distinction exists only in
+.BR cch ,
+and is what makes
+.B "pr list \-\-state merged"
+differ from
+.BR "pr list \-\-state closed" .
+.SH CONFIRMATION
+.B pr merge
+and
+.B pr close
+are irreversible, so both summarise the pull request and prompt
+.RB \(lq "Continue? [y/N]" \(rq
+before acting. Only
+.B y
+or
+.B yes
+proceeds; anything else cancels.
+.PP
+Passing
+.B \-\-yes
+skips the prompt. When standard input is not a terminal and
+.B \-\-yes
+was not passed, the command refuses to act rather than guessing, which keeps
+both operations safe to reach from scripts and CI.
+.SH ENVIRONMENT
+.TP
+.B AWS_PROFILE
+The AWS profile whose credentials and region are used, as for the AWS CLI.
+.TP
+.B AWS_REGION
+The AWS region to operate in, as for the AWS CLI.
+.SH EXIT STATUS
+.B cch
+exits 0 on success and 1 on error: an unknown command or option, a missing
+required argument, a repository that could not be resolved, or a cancelled
+confirmation. A search that matches no pull requests is not an error.
+.PP
+Failures reported by the AWS CLI or by
+.BR git (1)
+propagate their own exit status.
+.SH EXAMPLES
+List repositories in the current account and region:
+.PP
+.RS
+.nf
+cch repo list
+.fi
+.RE
+.PP
+Create a repository, clone it, and seed it with a README:
+.PP
+.RS
+.nf
+cch repo create my\-repo \-\-readme
+.fi
+.RE
+.PP
+From inside a clone, open a pull request from the current branch onto the
+default branch:
+.PP
+.RS
+.nf
+cch pr create \-\-title "Fix the parser" \-\-body "Closes the off\-by\-one."
+.fi
+.RE
+.PP
+Review what has been merged recently, then merge a pull request without being
+prompted:
+.PP
+.RS
+.nf
+cch pr list \-\-state merged \-\-limit 10
+cch pr merge 7 \-\-yes
+.fi
+.RE
+.PP
+Work with a repository from outside a clone:
+.PP
+.RS
+.nf
+cch pr list \-\-repo my\-repo
+.fi
+.RE
+.SH SEE ALSO
+.BR ccclone (1),
+.BR cclist (1),
+.BR ccinit (1),
+.BR aws (1),
+.BR git (1)
+.PP
+The AWS CodeCommit documentation:
+.PP
+.RS
+https://docs.aws.amazon.com/codecommit/
+.RE
+.SH BUGS
+Report bugs at https://github.com/easytocloud/codecommit\-utils/issues .
+.SH AUTHOR
+Developed by easytocloud.
+.SH COPYRIGHT
+MIT License.

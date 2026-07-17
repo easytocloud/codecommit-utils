@@ -72,6 +72,10 @@ jobs:
             bin.install "distribution/bin/ccclone"
             bin.install "distribution/bin/cclist"
             bin.install "distribution/bin/ccinit"
+            man1.install "distribution/man/cch.1"
+            man1.install "distribution/man/ccclone.1"
+            man1.install "distribution/man/cclist.1"
+            man1.install "distribution/man/ccinit.1"
             bash_completion.install "distribution/completions/cch-completion.bash"
             bash_completion.install "distribution/completions/ccclone-completion.bash"
             bash_completion.install "distribution/completions/cclist-completion.bash"
@@ -84,11 +88,13 @@ jobs:
           # Custom test command for your formula so you can run `brew test`.
           # These must not need AWS credentials or network access: cch derives
           # its version from the Cellar path it is installed into, and the help
-          # output is printed without calling the AWS CLI.
+          # output is printed without calling the AWS CLI. The man page check
+          # catches an install block that stops shipping them.
           # Optional - string.
           test: |
             assert_match "cch #{version}", shell_output("#{bin}/cch --version")
             assert_match "Work with AWS CodeCommit repositories", shell_output("#{bin}/cch --help")
+            assert_predicate man1/"cch.1", :exist?
 
           # Adds URL and checksum targets for different OS and architecture pairs. Using this option assumes 
           # a tar archive exists on your GitHub repo with the following URL pattern (this cannot be customized):
