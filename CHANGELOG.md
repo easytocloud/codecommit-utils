@@ -1,3 +1,10 @@
+## [0.8.1](https://github.com/easytocloud/codecommit-utils/compare/v0.8.0...v0.8.1) (2026-07-17)
+
+
+### Bug Fixes
+
+* **ci:** stop semantic-release commenting on released PRs ([0553e44](https://github.com/easytocloud/codecommit-utils/commit/0553e446af475c021dc848eb116bf5ba0b5d170e))
+
 # [0.8.0](https://github.com/easytocloud/codecommit-utils/compare/v0.7.2...v0.8.0) (2026-07-17)
 
 
