@@ -28,11 +28,11 @@ jobs:
       # its updater sometimes dies doing so, reporting unknown_error and leaving
       # those two out of the PR it opens. If a pin looks stale, check whether the
       # weekly run errored before assuming there is nothing newer.
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
       - name: Load GitHub credentials from 1Password
         id: load-github-credentials
-        uses: 1password/load-secrets-action@3a12b0ab99d9cd590a3e9b5a90ea017210ed9556  # v4.0.1
+        uses: 1password/load-secrets-action@eb2efd0703da22a93c467f2d1ffbb6826c11e19c  # v4.1.1
         with:
           export-env: false
         env:
